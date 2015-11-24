@@ -1,10 +1,11 @@
 package routers
 
 import (
-	"github.com/nivance/rebotweb/controllers"
 	"github.com/astaxie/beego"
+	"github.com/nivance/go-example/goweb/controllers"
+	"log"
 )
 
 func init() {
-    beego.Router("/", &controllers.MainController{})
+	log.Logger.Print("package routers init()")
 }
