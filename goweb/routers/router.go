@@ -2,10 +2,10 @@ package routers
 
 import (
 	"github.com/astaxie/beego"
+	log "github.com/cihub/seelog"
 	"github.com/nivance/go-example/goweb/controllers"
-	"log"
 )
 
 func init() {
-	log.Logger.Print("package routers init()")
+	log.Info("package routers init()")
 }

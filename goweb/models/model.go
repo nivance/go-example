@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"github.com/astaxie/beedb"
+	log "github.com/cihub/seelog"
 	_ "github.com/ziutek/mymysql/godrv"
 	"time"
 )
@@ -16,7 +17,9 @@ type Blog struct {
 
 func GetLink() beedb.Model {
 	db, err := sql.Open("mymysql", "blog/astaxie/123456")
+	log.Info("GetLink:", db)
 	if err != nil {
+		log.Critical("error", err)
 		panic(err)
 	}
 	orm := beedb.New(db)
@@ -25,6 +28,7 @@ func GetLink() beedb.Model {
 
 func GetAll() (blogs []Blog) {
 	db := GetLink()
+	log.Info(db)
 	db.FindAll(&blogs)
 	return
 }
