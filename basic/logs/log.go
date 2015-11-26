@@ -30,6 +30,5 @@ func DisableLog() {
 // UseLogger uses a specified seelog.LoggerInterface to output library log.
 // Use this func if you are using Seelog logging system in your app.
 func UseLogger(newLogger seelog.LoggerInterface) {
-	fmt.Println("init log is done.")
 	Logger = newLogger
 }
