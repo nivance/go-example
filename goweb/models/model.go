@@ -1,52 +1,58 @@
 package models
 
 import (
-	"database/sql"
-	"github.com/astaxie/beedb"
-	log "github.com/cihub/seelog"
+	"github.com/astaxie/beego/orm"
+	"github.com/nivance/go-example/basic/logs"
 	_ "github.com/ziutek/mymysql/godrv"
 	"time"
 )
 
-type Blog struct {
+type Entity struct {
 	Id      int `PK`
 	Title   string
 	Content string
 	Created time.Time
 }
 
-func GetLink() beedb.Model {
-	db, err := sql.Open("mymysql", "blog/astaxie/123456")
-	log.Info("GetLink:", db)
+func init() {
+	orm.RegisterDriver("mymysql", orm.DR_MySQL)
+	orm.RegisterDataBase("default", "mymysql", "tcp:127.0.0.1:3306*test/root/")
+	orm.Debug = true
+	orm.RegisterModel(new(Entity))
+	orm.BootStrap()
+}
+
+func GetAll() (entitys []Entity) {
+	qb, _ := orm.NewQueryBuilder("mysql")
+	qb.Select("id", "title", "content", "created").From("entity")
+	sql := qb.String()
+	ormer := orm.NewOrm()
+	ormer.Raw(sql).QueryRows(&entitys)
+	logs.Logger.Info("results:", entitys)
+	return entitys
+}
+
+func GetBlog(id int) (blog Entity) {
+	blog.Id = id
+	ormer := orm.NewOrm()
+	ormer.Read(&blog)
+	logs.Logger.Info("results:", blog)
+	return blog
+}
+
+func SaveBlog(blog Entity) {
+	o := orm.NewOrm()
+	o.Using("default")
+	blog.Created = time.Now()
+	o.Insert(&blog)
+}
+
+func DelBlog(blog Entity) {
+	o := orm.NewOrm()
+	affectnum, err := o.QueryTable("entity").Filter("id", blog.Id).Delete()
 	if err != nil {
-		log.Critical("error", err)
-		panic(err)
+		logs.Logger.Error("delete failed", err)
 	}
-	orm := beedb.New(db)
-	return orm
-}
-
-func GetAll() (blogs []Blog) {
-	db := GetLink()
-	log.Info(db)
-	db.FindAll(&blogs)
-	return
-}
-
-func GetBlog(id int) (blog Blog) {
-	db := GetLink()
-	db.Where("id=?", id).Find(&blog)
-	return
-}
-
-func SaveBlog(blog Blog) (bg Blog) {
-	db := GetLink()
-	db.Save(&blog)
-	return bg
-}
-
-func DelBlog(blog Blog) {
-	db := GetLink()
-	db.Delete(&blog)
+	logs.Logger.Info("delete success, affectnum:", affectnum)
 	return
 }

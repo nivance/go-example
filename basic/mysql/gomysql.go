@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"github.com/astaxie/beego/orm"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/nivance/go-example/basic/logs"
 	"math/rand"
@@ -11,8 +12,42 @@ import (
 
 // use go-sql-driver
 
+func init() {
+	orm.RegisterDriver("mysql", orm.DR_MySQL)
+	orm.RegisterDataBase("default", "mysql", "root:@tcp(127.0.0.1:3306)/test?autocommit=true&charset=utf8")
+	orm.Debug = true
+}
+
+func OrmInsert() {
+	o := orm.NewOrm()
+	o.Using("default")
+	entity := new(Entity)
+	entity.Content = "ormContent"
+	entity.Title = "orm"
+	entity.Created = time.Now()
+	o.Insert(entity)
+}
+
+func OrmGetEntity(id int) (entity Entity) {
+	entity.Id = id
+	ormer := orm.NewOrm()
+	ormer.Read(&entity)
+	logs.Logger.Info("results:", entity)
+	return entity
+}
+
+func OrmGetAll() (entity []Entity) {
+	qb, _ := orm.NewQueryBuilder("mysql")
+	qb.Select("id", "title", "content", "created").From("entity").Limit(10).Offset(0)
+	sql := qb.String()
+	ormer := orm.NewOrm()
+	ormer.Raw(sql).QueryRows(&entity)
+	logs.Logger.Info("results:", entity)
+	return entity
+}
+
 func GetGoDB() (db *sql.DB, err error) {
-	return sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/test?autocommit=true")
+	return sql.Open("mysql", "root:@tcp(127.0.0.1:3306)/test?autocommit=true&charset=utf8")
 }
 
 func GoInsert() {

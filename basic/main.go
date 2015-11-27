@@ -12,7 +12,9 @@ func main() {
 	//	entities := mysql.Query()
 	//	logs.Logger.Debug("result:", entities)
 
-	mysql.GoInsert()
-	logs.Logger.Info("-------Done.-------")
+	//mysql.OrmInsert()
+	// entity := mysql.OrmGetEntity(1)
+	entity := mysql.OrmGetAll()
+	logs.Logger.Info("-------Done.-------", entity)
 
 }
