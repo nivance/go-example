@@ -5,6 +5,7 @@ import (
 	"github.com/nivance/go-example/basic/logs"
 	"github.com/nivance/go-example/goweb/models"
 	"strconv"
+	"time"
 )
 
 type EditController struct {
@@ -25,6 +26,13 @@ func (this *EditController) Post() {
 	blog.Id, _ = strconv.Atoi(inputs.Get("id"))
 	blog.Title = inputs.Get("title")
 	blog.Content = inputs.Get("content")
-	models.SaveBlog(blog)
+	dataStr := inputs.Get("created")
+	date, err := time.Parse("2006-01-02 15:04:05", dataStr)
+	if err != nil {
+		logs.Logger.Warn("time parse error:", dataStr)
+		date = time.Now()
+	}
+	blog.Created = date
+	models.UpdateBlog(blog)
 	this.Ctx.Redirect(302, "/")
 }

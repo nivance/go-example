@@ -16,7 +16,7 @@ type Entity struct {
 
 func init() {
 	orm.RegisterDriver("mymysql", orm.DR_MySQL)
-	orm.RegisterDataBase("default", "mymysql", "tcp:127.0.0.1:3306*test/root/")
+	orm.RegisterDataBase("default", "mymysql", "tcp:127.0.0.1:3306*test/root/mysql")
 	orm.Debug = true
 	orm.RegisterModel(new(Entity))
 	orm.BootStrap()
@@ -55,4 +55,10 @@ func DelBlog(blog Entity) {
 	}
 	logs.Logger.Info("delete success, affectnum:", affectnum)
 	return
+}
+
+func UpdateBlog(blog Entity) {
+	o := orm.NewOrm()
+	o.Using("default")
+	o.Update(&blog)
 }

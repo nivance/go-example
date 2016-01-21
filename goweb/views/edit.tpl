@@ -5,5 +5,6 @@
 标题:<input type="text" name="title" value="{{.Post.Title}}"><br>
 内容：<textarea name="content" colspan="3" rowspan="10">{{.Post.Content}}</textarea>
 <input type="hidden" name="id" value="{{.Post.Id}}">
+<input type="hidden" name="id" value="{{.Post.Created}}">
 <input type="submit">
 </form>
