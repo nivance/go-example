@@ -4,4 +4,4 @@ CREATE TABLE `entity` (
   `content` text,
   `created` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=UTF-8;
+) ENGINE=InnoDB DEFAULT CHARSET=UTF8;

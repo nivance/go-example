@@ -1,4 +1,3 @@
-// basic project main.go
 package main
 
 import (
@@ -7,14 +6,13 @@ import (
 )
 
 func main() {
-	// use mymysql driver
-	//	mysql.Insert()
-	//	entities := mysql.Query()
-	//	logs.Logger.Debug("result:", entities)
-
 	//mysql.OrmInsert()
-	// entity := mysql.OrmGetEntity(1)
-	entity := mysql.OrmGetAll()
-	logs.Logger.Info("-------Done.-------", entity)
+	//entity := mysql.OrmGetEntity(1)
+	//entity := mysql.OrmGetAll()
+	//logs.Logger.Info("-------Done.-------", entity)
 
+	mysql.UpdateTags("c:\\tags.xlsx")
+	//	logs.Logger.Info(mysql.ReadXlxs("c:\\tags.xlsx"))
+	//mysql.QueryAllBooks()
+	logs.Logger.Info("-------Done.-------")
 }
