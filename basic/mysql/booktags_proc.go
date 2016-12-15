@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 
@@ -80,6 +81,7 @@ func QueryAllBooks() {
 
 func UpdateTags(filePath string) {
 	tags := ReadXlxs(filePath)
+	logs.Logger.Info(tags)
 	limit := 20
 	offset := 0
 	db, err := GetBookDB()
@@ -126,8 +128,7 @@ func checkFileIsExist(filename string) bool {
 }
 
 func ReadXlxs(filePath string) (t map[string]string) {
-	excelFileName := "c:\\tags.xlsx"
-	xlFile, err := xlsx.OpenFile(excelFileName)
+	xlFile, err := xlsx.OpenFile(filePath)
 	if err != nil {
 		return
 	}
@@ -135,11 +136,56 @@ func ReadXlxs(filePath string) (t map[string]string) {
 	sheet := xlFile.Sheet["Sheet1"]
 	for _, row := range sheet.Rows {
 		name := strings.Replace(row.Cells[0].Value, " ", "", -1)
-		tag := strings.Replace(row.Cells[1].Value, " ", "", -1)
+		tag := strings.Replace(row.Cells[2].Value, " ", "", -1)
 		tag = strings.Replace(tag, "_x000D_", "", -1)
 		if tag != "" && tag != "无" {
 			tags[name] = tag
 		}
 	}
 	return tags
+}
+
+func ReadNewTagExcel(filePath string) {
+	fmt.Println("read file :" + filePath)
+	xlFile, err := xlsx.OpenFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	db, err := GetDoobaDB()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+	for _, row := range xlFile.Sheet["Sheet1"].Rows {
+		id, _ := row.Cells[0].Int()
+		//		fmt.Println("excel:", id, row.Cells[1].Value, row.Cells[2].Value)
+		updateNewTag(db, id, row.Cells[2].Value)
+	}
+}
+
+func updateNewTag(db *sql.DB, id int, newTag string) {
+	stmt, err := db.Prepare("update t_book set TAGS = ? where id = ? ")
+	if err != nil {
+		panic(err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(newTag, id)
+	if err != nil {
+		panic(err)
+	}
+	stmt, err = db.Prepare("update t_rec_action set DESCRIPTION = ? where ITEMID = ? ")
+	if err != nil {
+		panic(err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(newTag, id)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("update tags for :", id, newTag)
+}
+
+func GetDoobaDB() (db *sql.DB, err error) {
+	godrv.Register("SET NAMES UTF8")
+	return sql.Open("mymysql", "tcp:192.168.199.224:3306*robot_test/root/Charles2015!")
 }
