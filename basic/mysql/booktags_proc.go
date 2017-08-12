@@ -185,7 +185,22 @@ func updateNewTag(db *sql.DB, id int, newTag string) {
 	fmt.Println("update tags for :", id, newTag)
 }
 
+func ReadTagsFromFile(filePath string) {
+	xlFile, err := xlsx.OpenFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+	for _, row := range xlFile.Sheet["Sheet1"].Rows {
+		name, _ := row.Cells[0].String()
+		tag, _ := row.Cells[1].String()
+		subtag, _ := row.Cells[2].String()
+		age, _ := row.Cells[3].String()
+		fmt.Println("update t_book set TAGS = '" + tag + "', SUB_TAGS = '" + subtag + "', AGE = '" + age + "' where name = '" + name + "';")
+		fmt.Println("t_rec_action set DESCRIPTION = '" + tag + "' where name = '" + name + "';")
+	}
+}
+
 func GetDoobaDB() (db *sql.DB, err error) {
 	godrv.Register("SET NAMES UTF8")
-	return sql.Open("mymysql", "tcp:192.168.199.224:3306*robot_test/root/Charles2015!")
+	return sql.Open("mymysql", "tcp:192.168.199.224:3306*robot_itg/root/Charles2015!")
 }
