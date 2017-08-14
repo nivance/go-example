@@ -9,7 +9,7 @@ import (
 	"github.com/tealeg/xlsx"
 )
 
-func init3() {
+func init1() {
 	//	age := "345"
 	//	n := len(age)
 	//	fmt.Println("result:" + string(age[0]))
@@ -20,7 +20,7 @@ func init3() {
 	//	}
 	//	fmt.Println("result:" + strings.Join(sa, ","))
 
-	ReadAndWriteTag("C:\\Users\\lenovo\\Desktop\\7月第四周标签.xlsx", "C:\\Users\\lenovo\\Desktop\\a.out")
+	ReadAndWriteTag("C:\\Users\\lenovo\\Desktop\\8月标签1.xlsx", "C:\\Users\\lenovo\\Desktop\\a.out")
 }
 
 func ReadAndWriteTag(filePath string, resultFile string) {

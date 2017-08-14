@@ -2,14 +2,18 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
-	//	"strconv"
+	"strconv"
 	"strings"
+
+	godrv "github.com/ziutek/mymysql/godrv"
 
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
@@ -19,9 +23,9 @@ const destDir = "C:\\Users\\lenovo\\Desktop\\huiben\\outer"
 const jsonDir = "C:\\Users\\lenovo\\Desktop\\huiben\\json_file"
 
 func init() {
-	//	var srcDir = "C:\\Users\\lenovo\\Desktop\\huiben\\ready\\8月第二周\\本周新增zip"
-	// var srcDir = "C:\\Users\\lenovo\\Desktop\\huiben\\ready\\替换英语音频的"
-	var srcDir = "C:\\Users\\lenovo\\Desktop\\huiben\\ready\\etcb"
+	var srcDir = "C:\\Users\\lenovo\\Desktop\\huiben\\ready\\8月第二周\\部分音频替换"
+	//	var srcDir = "C:\\Users\\lenovo\\Desktop\\huiben\\ready\\替换英语音频的"
+	//	var srcDir = "C:\\Users\\lenovo\\Desktop\\huiben\\ready\\etcb"
 	checkDirExist(destDir, true)
 	if !checkDirExist(srcDir, false) {
 		fmt.Println("有文件夹不存在")
@@ -39,8 +43,13 @@ func init() {
 	// 重命名音频文件
 	//	filepath.Walk(srcDir, walkAndRenameFile)
 
+	// 音频替换
+	//	db, _ = GetDB()
+	//	filepath.Walk(srcDir, replaceAudioFile)
+	//	writeEtcbContent2File(srcDir, etcbName, etcbContent)
+
 	// 生成更新etcb sql
-	// filepath.Walk(srcDir, buildEtcbSQL)
+	//	filepath.Walk(srcDir, buildEtcbSQL)
 }
 
 type Book struct {
@@ -184,8 +193,9 @@ func walkAndFindJsonFile(path string, info os.FileInfo, err error) error {
 }
 
 var bookId = ""
-var extCode = "_en" // 制作英文etcb文件时用
-// var extCode = "0" 	// 音频替换时用
+
+//var extCode = "_en" // 制作英文etcb文件时用
+var extCode = "0" // 音频替换时用
 
 func walkAndRenameFile(path string, info os.FileInfo, err error) error {
 	fmt.Printf("%s\n", path)
@@ -288,6 +298,87 @@ func replaceAudioString(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
+var db *sql.DB = nil
+var etcbName = ""
+
+/*
+* etcb文件命名规则：bookid随机码extcode_书名.etcb，如100003064wj9QFH30_ScaredyCats.etcb
+* mp3文件命名规则：bookid书名首字母缩写_编号.mp3，如100003064sc1_2_17_a.mp3
+ */
+func replaceAudioFile(path string, info os.FileInfo, err error) error {
+	//	fmt.Println("path:", path)
+	if info.IsDir() { // 书名
+		var url string
+		bookId, url = getBookInfoFromDB(db, info.Name())
+		if len(bookId) > 0 {
+			fmt.Println("%d---%s", bookId, url)
+			if len(etcbName) > 0 { // 如果不是处理第1本了，要将前面的书写到文件里
+				dirOfPath := path[0:strings.LastIndex(path, "\\")] //目录
+				writeEtcbContent2File(dirOfPath, etcbName, etcbContent)
+			}
+			etcbContent = readUrlContent(url)
+			etcbName = url[strings.LastIndex(url, "/"):len(url)] // 文件名
+		}
+	} else { // 重命名文件&替换etcb文件
+		ns := strings.Split(info.Name(), "_")
+		var name bytes.Buffer
+		for i, v := range ns {
+			if i == 0 {
+				name.WriteString(bookId)
+				name.WriteString(v)
+				name.WriteString(extCode)
+			} else {
+				name.WriteString("_")
+				name.WriteString(v)
+			}
+		}
+		var oldMp3Name bytes.Buffer // 原mp3命名
+		oldMp3Name.WriteString(bookId)
+		if !strings.EqualFold(extCode, "0") { // 如果不是第1次替换
+			oldMp3Name.WriteString(info.Name()[0:strings.Index(info.Name(), "_")])
+			code, _ := strconv.Atoi(extCode)
+			oldMp3Name.WriteString(strconv.Itoa(code - 1))
+			oldMp3Name.WriteString(info.Name()[strings.Index(info.Name(), "_"):len(info.Name())])
+		} else {
+			oldMp3Name.WriteString(info.Name())
+		}
+		etcbContent = strings.Replace(etcbContent, oldMp3Name.String(), name.String(), -1)
+		//		fmt.Println("oldMp3Name:----", oldMp3Name.String())
+		//		fmt.Println("rename:----", strings.Replace(path, info.Name(), name.String(), -1))
+		os.Rename(path, strings.Replace(path, info.Name(), name.String(), -1))
+	}
+	return nil
+}
+
+func getBookInfoFromDB(db *sql.DB, name string) (id, url string) {
+	rows, err := db.Query("select id, link from t_book where name = '" + name + "'")
+	CheckError(err)
+	defer rows.Close()
+	for rows.Next() {
+		rows.Scan(&id, &url)
+	}
+	return
+}
+
+func writeEtcbContent2File(dir, name, content string) {
+	// dirOfPath := path[0:strings.LastIndex(path, "\\")] //目录
+	var newEtcbName string
+	if !strings.EqualFold(extCode, "0") {
+		newEtcbName = etcbName[0:strings.Index(etcbName, "_")-1] + extCode + etcbName[strings.Index(etcbName, "_"):len(etcbName)]
+	} else {
+		newEtcbName = etcbName[0:strings.Index(etcbName, "_")] + extCode + etcbName[strings.Index(etcbName, "_"):len(etcbName)]
+	}
+	fmt.Println("newetcbname : ", dir+newEtcbName)
+	write2File(dir+newEtcbName, etcbContent)
+}
+
+func readUrlContent(rawurl string) string {
+	resp, _ := http.Get(rawurl)
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	return string(body)
+}
+
 func write2File(path, content string) {
 	file, err := os.Create(path)
 	CheckError(err)
@@ -295,6 +386,34 @@ func write2File(path, content string) {
 	_, err1 := file.WriteString(content)
 	CheckError(err1)
 }
+
+//func walkAndRenameFile(path string, info os.FileInfo, err error) error {
+//	fmt.Printf("%s\n", path)
+//	// fmt.Printf("bookId:%s\n", bookId)
+//	if !info.IsDir() {
+//		var buf bytes.Buffer
+//		var names = strings.Split(info.Name(), "_")
+//		for i, v := range names {
+//			if len(buf.String()) > 0 {
+//				buf.WriteString("_")
+//			}
+//			if i == 0 {
+//				buf.WriteString(bookId)
+//				buf.WriteString(v)
+//				buf.WriteString(extCode)
+//			} else {
+//				buf.WriteString(v)
+//			}
+//		}
+//		os.Rename(path, strings.Replace(path, info.Name(), buf.String(), -1))
+//		fmt.Printf("%s\n", strings.Replace(path, info.Name(), buf.String(), -1))
+//		fmt.Printf("%s\n", buf.String())
+
+//	} else {
+//		fmt.Printf("%s\n", path)
+//	}
+//	return nil
+//}
 
 func GbkToUtf8(s []byte) ([]byte, error) {
 	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewDecoder())
@@ -349,4 +468,9 @@ func CheckError(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func GetDB() (db *sql.DB, err error) {
+	godrv.Register("SET NAMES UTF8")
+	return sql.Open("mymysql", "tcp:192.168.199.224:3306*robot_itg/root/Charles2015!")
 }

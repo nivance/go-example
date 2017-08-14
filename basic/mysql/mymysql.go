@@ -2,11 +2,12 @@ package mysql
 
 import (
 	"database/sql"
-	"github.com/nivance/go-example/basic/logs"
-	godrv "github.com/ziutek/mymysql/godrv"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/nivance/go-example/basic/logs"
+	godrv "github.com/ziutek/mymysql/godrv"
 )
 
 // use mymysql driver
@@ -15,7 +16,7 @@ func GetDB() (db *sql.DB, err error) {
 	//	model := mysql.Entity{1, "2", "3", time.Now()}
 	//	models = append(models, model)
 	godrv.Register("SET NAMES UTF8")
-	return sql.Open("mymysql", "tcp:127.0.0.1:3306*test/root/")
+	return sql.Open("mymysql", "tcp:192.168.199.224:3306*robot_itg/root/Charles2015!")
 }
 
 func Insert() {
